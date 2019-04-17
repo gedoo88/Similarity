@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import scipy
 import scipy.sparse
+import copy
 
 
 
@@ -34,8 +35,8 @@ d_inv = 1/d
 D_inv = scipy.sparse.spdiags(d_inv, 0, size, size, format = "csr")
 D_sqrt = scipy.sparse.spdiags(np.sqrt(d_inv), 0, size, size, format = "csr")
 
-A_tilde = D_sqrt*Adj_csr*D_sqrt
-P = D_inv*Adj_csr
+A_tilde = D_sqrt.dot(Adj_csr).dot(D_sqrt)
+P = D_inv.dot(Adj_csr)
 
 group_1 = np.empty(shape = 0, dtype = int)
 
@@ -44,9 +45,50 @@ for x in range(0,len(groups)):
         group_1 = np.append(group_1,groups[x,0])
 
 seed = np.array(group_1[0:len(group_1)//10])
-y = np.zeros()
+y = np.zeros(size)
+
+for x in range(0,len(seed)):
+        y[seed[x]-1]=1
+
+
+
+
+def F_matrix(k, A, B, y):
+        F = np.column_stack((y,A.dot(y),B.dot(y)))
+        for x in range(1,k):
+                l=x
+                F = np.column_stack((F, A.dot(F[:,2*l-1])))
+                F = np.column_stack((F, B.dot(F[:,2*l])))
+        return F
 
 k = 8
 
-F = np.array()
+nsplit = 5
+seed_split = np.array_split(seed,nsplit)
+
+F = F_matrix(k,A_tilde,P, y)
+
+F_restricted = np.delete(F, seed, axis = 0)
+
+hide_seed = copy.deepcopy(y)
+hide_seed[seed_split[0]-1] = 0
+F_training = F_matrix(k,A_tilde,P,hide_seed)[seed_split[0],:]
+for x in range(1,nsplit):
+        hide_seed = copy.deepcopy(y)
+        hide_seed[seed_split[x]-1]=0
+        F_training = np.row_stack((F_training,F_matrix(k,A_tilde,P,hide_seed)[seed_split[x],:]))
+
+
+
+
+Lambda = 0.1
+
+M = Lambda*np.identity(2*k+1) + np.transpose(F_training).dot(F_training) + np.transpose(F_restricted).dot(F_restricted)
+b = np.transpose(F_training).dot(np.ones(len(seed)))
+
+c = np.linalg.solve(M,b)
+
+S = F.dot(c)
+
+ind = np.argpartition(S, -20)[-20:]
 
