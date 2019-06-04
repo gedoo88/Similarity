@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import pandas as pd
 import os
@@ -9,6 +10,7 @@ import random
 
 
 def AP_from_edges(data_edges, n_nodes):
+        """returns the markovian transition and symetrically normalised adjacency matrix from the edges data and number of nodes""" 
         nedges = len(data_edges)
         row_ind = np.zeros(2*nedges, dtype = int)
         col_ind = np.zeros(2*nedges, dtype = int)
@@ -36,6 +38,7 @@ def AP_from_edges(data_edges, n_nodes):
 
 
 def get_group(groups_list,group_number):
+        """from group edges, returns an array containing the indices corresponding to the group number selected"""
         group_indices = np.empty(shape = 0, dtype = int)
         for x in range(0,len(groups_list)):
                 if groups_list[x,1] == group_number:
@@ -45,6 +48,7 @@ def get_group(groups_list,group_number):
 
 
 def F_matrix(k, A, B, y):
+        """returns the F matrix to k-th degree from A_tilde, P and y"""
         F = np.column_stack((y,A.dot(y),B.dot(y)))
         for x in range(1,k):
                 l=x
@@ -56,6 +60,8 @@ def F_matrix(k, A, B, y):
 
 
 def get_similarity_score(edges_data, n_nodes, groups, group_number, k, coef_regu, n_split):
+        """returns predictions, indices rom the training group, indices from the testing group, the residuals and the 
+        coefficients of the F matrix"""
         AP = AP_from_edges(edges_data, n_nodes)
         A_tilde = AP[0]
         P = AP[1]
@@ -86,10 +92,10 @@ def get_similarity_score(edges_data, n_nodes, groups, group_number, k, coef_regu
         M = Lambda*np.identity(2*k+1) + np.transpose(F_training).dot(F_training) + np.transpose(F_restricted).dot(F_restricted)
         b = np.transpose(F_training).dot(np.ones(len(group_split[0])))
         c = np.linalg.solve(M,b)
-        S = F.dot(c)
-        residu = (target-S).dot(target-S)
+        y_hat = F.dot(c)
+        residu = (target-y_hat).dot(target-y_hat)
         test_group = np.delete(group,np.arange(len(group_split[0])))
-        return S, group_split[0], test_group, residu, c
+        return y_hat, group_split[0], test_group, residu, c
 
   
 
