@@ -6,6 +6,8 @@ import scipy
 import scipy.sparse
 import copy
 import random
+import time
+from time import perf_counter
 
 
 
@@ -15,11 +17,10 @@ def AP_from_edges(data_edges, n_nodes):
         row_ind = np.zeros(2*nedges, dtype = int)
         col_ind = np.zeros(2*nedges, dtype = int)
 
-        for x in range(0,nedges): 
-                row_ind[x]=data_edges[x,0]-1
-                row_ind[nedges+x]=data_edges[x,1]-1
-                col_ind[x]=data_edges[x,1]-1
-                col_ind[nedges+x]=data_edges[x,0]-1
+        row_ind[:nedges] = data_edges[:,0]
+        row_ind[nedges:] = data_edges[:,1]
+        col_ind[:nedges] = data_edges[:,1]
+        col_ind[nedges:] = data_edges[:,0]
 
         Adj_coo = scipy.sparse.coo_matrix((np.ones(2*nedges, dtype = int),(row_ind,col_ind)), shape=(n_nodes,n_nodes))
         Adj_csr = scipy.sparse.coo_matrix.tocsr(Adj_coo)
@@ -32,34 +33,40 @@ def AP_from_edges(data_edges, n_nodes):
         D_sqrt = scipy.sparse.spdiags(np.sqrt(d_inv), 0, n_nodes, n_nodes, format = "csr")
 
         A_tilde = D_sqrt.dot(Adj_csr).dot(D_sqrt)
-        P = D_inv.dot(Adj_csr)
+        P = Adj_csr.dot(D_inv)
         return A_tilde, P 
 
 
 
 def get_group(groups_list,group_number):
         """from group edges, returns an array containing the indices corresponding to the group number selected"""
-        group_indices = np.empty(shape = 0, dtype = int)
-        for x in range(0,len(groups_list)):
-                if groups_list[x,1] == group_number:
-                        group_indices = np.append(group_indices,groups_list[x,0])
+        file = open(groups_list, 'r')
+        lines=file.readlines()
+        group_indices = np.fromstring(lines[group_number],sep="\t", dtype = int)
         return group_indices
 
 
 
 def F_matrix(k, A, B, y):
         """returns the F matrix to k-th degree from A_tilde, P and y"""
-        F = np.column_stack((y,A.dot(y),B.dot(y)))
+        F = np.empty((len(y),2*k+1))
+        F[:,0] = y
+        x1 = A.dot(y) 
+        F[:,1] = x1
+        x2 = B.dot(y)
+        F[:,2] = x2
         for x in range(1,k):
                 l=x
-                F = np.column_stack((F, A.dot(F[:,2*l-1])))
-                F = np.column_stack((F, B.dot(F[:,2*l])))
+                x1 = A.dot(x1)
+                F[:,2*l+1] = x1
+                x2 = B.dot(x2)
+                F[:,2*l+2] = x2
         return F
 
 
 
 
-def get_similarity_score(edges_data, n_nodes, groups, group_number, k, coef_regu, n_split):
+def get_similarity_score(edges_data, n_nodes, groups, group_number, coef_regu, k, n_split):
         """returns predictions, indices rom the training group, indices from the testing group, the residuals and the 
         coefficients of the F matrix"""
         AP = AP_from_edges(edges_data, n_nodes)
@@ -72,21 +79,21 @@ def get_similarity_score(edges_data, n_nodes, groups, group_number, k, coef_regu
 
         target = np.zeros(n_nodes)
         for x in range(0,len(group_split[0])):
-                target[group_split[0][x]-1]=1
-
+                target[group_split[0][x]]=1
+        
         nsplit = len(group_split[0])
         seed_split = np.array_split(group_split[0],nsplit)
-
+        F = np.empty((n_nodes,2*k+1))
         F = F_matrix(k, A_tilde, P, target)
-        F_restricted = np.delete(F, group_split[0]-1, axis = 0)
-
+        F_restricted = np.delete(F, group_split[0], axis = 0)
+        
         hide_seed = copy.deepcopy(target)
-        hide_seed[seed_split[0]-1] = 0
-        F_training = F_matrix(k,A_tilde,P,hide_seed)[seed_split[0]-1,:]
-        for x in range(1,nsplit):
+        hide_seed[seed_split[0]] = 0
+        F_training = np.empty((nsplit,2*k+1))
+        for x in range(0,nsplit):
                 hide_seed = copy.deepcopy(target)
-                hide_seed[seed_split[x]-1]=0
-                F_training = np.row_stack((F_training,F_matrix(k,A_tilde,P,hide_seed)[seed_split[x],:]-1))
+                hide_seed[seed_split[x]]=0
+                F_training[x,:] = F_matrix(k,A_tilde,P,hide_seed)[seed_split[x],:]
 
         Lambda = coef_regu
         M = Lambda*np.identity(2*k+1) + np.transpose(F_training).dot(F_training) + np.transpose(F_restricted).dot(F_restricted)
@@ -97,7 +104,14 @@ def get_similarity_score(edges_data, n_nodes, groups, group_number, k, coef_regu
         test_group = np.delete(group,np.arange(len(group_split[0])))
         return y_hat, group_split[0], test_group, residu, c
 
-  
+  #donc travaille, ferme fb estpèce de petit écolier
+  #TRAVAILLE 
+  #Bon courage mon chéri
+  #Bisous <3
+
+
+
+
 
 
 
