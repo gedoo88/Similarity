@@ -78,65 +78,65 @@ groups = r'Datasets\blogcat_contiguous_large_groups.txt'
 A = A_from_edges(edges,number_nodes)
 
 
-
+rep=10
 group_sel=np.arange(29)
 random.shuffle(group_sel)
 n_groups = 29
-prec100= np.empty((n_groups,10,4))  
-accuracy= np.empty((n_groups,10,4)) 
-NDCG= np.empty((n_groups,10,4))         
+prec100= np.empty((n_groups,rep,4))  
+accuracy= np.empty((n_groups,rep,4)) 
+NDCG= np.empty((n_groups,rep,4))         
 for i in range(n_groups):
-        for j in range(10):
+        for j in range(rep):
                 results = sim_learning.get_sim_score(A, number_nodes, groups, group_sel[i], 1e-02, 1, 16, 10)
                 prec100[i,j,0] = get_prec100(results[0],results[1])
                 accuracy[i,j,0] = get_accuracy(results[0],results[1])
                 NDCG[i,j,0] = get_NDCG(results[0],results[1])
-                results = benchmark_methods_cross.get_PPR_score(A, number_nodes, groups, group_sel[i], 1e-02, 1, 16, 10)
+                results = benchmark_methods_cross.get_PPR_score(A, number_nodes, groups, group_sel[i], 16, 10)
                 prec100[i,j,1] = get_prec100(results[0],results[1])
                 accuracy[i,j,1] = get_accuracy(results[0],results[1])
-                NDCGnl[i,j,1] = get_NDCG(results[0],results[1])
-                results = benchmark_methods_cross.get_exp_score(A, number_nodes, groups, group_sel[i], 1e-02, 1, 16, 10)
+                NDCG[i,j,1] = get_NDCG(results[0],results[1])
+                results = benchmark_methods_cross.get_exp_score(A, number_nodes, groups, group_sel[i], 16, 10)
                 prec100[i,j,2] = get_prec100(results[0],results[1])
                 accuracy[i,j,2] = get_accuracy(results[0],results[1])
-                NDCGnl[i,j,2] = get_NDCG(results[0],results[1])
-                results = benchmark_methods_cross.get_LLGC_score(A, number_nodes, groups, group_sel[i], 1e-02, 1, 16, 10)
+                NDCG[i,j,2] = get_NDCG(results[0],results[1])
+                results = benchmark_methods_cross.get_LLGC_score(A, number_nodes, groups, group_sel[i], 16, 10)
                 prec100[i,j,3] = get_prec100(results[0],results[1])
                 accuracy[i,j,3] = get_accuracy(results[0],results[1])
-                NDCGnl[i,j,3] = get_NDCG(results[0],results[1])
+                NDCG[i,j,3] = get_NDCG(results[0],results[1])
         print(i)
 
 result_prec100 = np.empty((4,n_groups))
 for i in range(n_groups):
-        mean = np.mean([np.mean(prec100[i,:,1]),np.mean(prec100[i,:,2]),np.mean(prec100[i,:,3]),np.mean(prec100[i,:,4])])
-        std = np.std([prec100[i,:,1],prec100[i,:,2],prec100[i,:,3],prec100[i,:,4]])
-        result_prec100[0,i] = (np.mean(prec100[i,:,1])-mean)/std
-        result_prec100[1,i] = (np.mean(prec100[i,:,2])-mean)/std
-        result_prec100[2,i] = (np.mean(prec100[i,:,3])-mean)/std
-        result_prec100[3,i] = (np.mean(prec100[i,:,4])-mean)/std
+        mean = np.mean([np.mean(prec100[i,:,0]),np.mean(prec100[i,:,1]),np.mean(prec100[i,:,2]),np.mean(prec100[i,:,3])])
+        std = np.std([prec100[i,:,0],prec100[i,:,1],prec100[i,:,2],prec100[i,:,3]])
+        result_prec100[0,i] = (np.mean(prec100[i,:,0])-mean)/std
+        result_prec100[1,i] = (np.mean(prec100[i,:,1])-mean)/std
+        result_prec100[2,i] = (np.mean(prec100[i,:,2])-mean)/std
+        result_prec100[3,i] = (np.mean(prec100[i,:,3])-mean)/std
 score_prec100 = np.empty(4)
 for i in range(4):
         score_prec100[i]=np.mean(result_prec100[i,:])        
 
 result_acc = np.empty((4,n_groups))
 for i in range(n_groups):
-        mean = np.mean([np.mean(accuracy[i,:,1]),np.mean(accuracy[i,:,2]),np.mean(accuracy[i,:,3]),np.mean(accuracy[i,:,4])])
-        std = np.std([accuracy[i,:,1],accuracy[i,:,2],accuracy[i,:,3],accuracy[i,:,4]])
-        result_acc[0,i] = (np.mean(accuracy[i,:,1])-mean)/std
-        result_acc[1,i] = (np.mean(accuracy[i,:,2])-mean)/std
-        result_acc[2,i] = (np.mean(accuracy[i,:,3])-mean)/std
-        result_acc[3,i] = (np.mean(accuracy[i,:,4])-mean)/std
+        mean = np.mean([np.mean(accuracy[i,:,0]),np.mean(accuracy[i,:,1]),np.mean(accuracy[i,:,2]),np.mean(accuracy[i,:,3])])
+        std = np.std([accuracy[i,:,0],accuracy[i,:,1],accuracy[i,:,2],accuracy[i,:,3]])
+        result_acc[0,i] = (np.mean(accuracy[i,:,0])-mean)/std
+        result_acc[1,i] = (np.mean(accuracy[i,:,1])-mean)/std
+        result_acc[2,i] = (np.mean(accuracy[i,:,2])-mean)/std
+        result_acc[3,i] = (np.mean(accuracy[i,:,3])-mean)/std
 score_acc = np.empty(4)
 for i in range(4):
         score_acc[i]=np.mean(result_acc[i,:])        
 
 result_NDCG = np.empty((4,n_groups))
 for i in range(n_groups):
-        mean = np.mean([np.mean(NDCG[i,:,1]),np.mean(NDCG[i,:,2]),np.mean(NDCG[i,:,3]),np.mean(NDCG[i,:,4])])
-        std = np.std([NDCG[i,:,1],NDCG[i,:,2],NDCG[i,:,3],NDCG[i,:,4]])
-        result_NDCG[0,i] = (np.mean(NDCG[i,:,1])-mean)/std
-        result_NDCG[1,i] = (np.mean(NDCG[i,:,2])-mean)/std
-        result_NDCG[2,i] = (np.mean(NDCG[i,:,3])-mean)/std
-        result_NDCG[3,i] = (np.mean(NDCG[i,:,4])-mean)/std
+        mean = np.mean([np.mean(NDCG[i,:,0]),np.mean(NDCG[i,:,1]),np.mean(NDCG[i,:,2]),np.mean(NDCG[i,:,3])])
+        std = np.std([NDCG[i,:,0],NDCG[i,:,1],NDCG[i,:,2],NDCG[i,:,3]])
+        result_NDCG[0,i] = (np.mean(NDCG[i,:,0])-mean)/std
+        result_NDCG[1,i] = (np.mean(NDCG[i,:,1])-mean)/std
+        result_NDCG[2,i] = (np.mean(NDCG[i,:,2])-mean)/std
+        result_NDCG[3,i] = (np.mean(NDCG[i,:,3])-mean)/std
 score_NDCG = np.empty(4)
 for i in range(4):
         score_NDCG[i]=np.mean(result_NDCG[i,:])        
